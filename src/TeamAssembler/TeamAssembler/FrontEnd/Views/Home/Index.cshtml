@@ -1,0 +1,67 @@
+@{
+    ViewData["Title"] = "Avengers Team Assembler";
+}
+
+<div ng-controller="TeamAssemblerController" ng-init="init()">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-8 col-xs-offset-2 text-center">
+                <h2>Avengers Team Assembler</h2>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-8 col-xs-offset-2">
+                <form>
+                    <div>
+                        <input type="text" ng-model="teamName"/>
+                    </div>
+                    <div>
+                        <span ng-repeat="member in members">
+                            <span style="white-space:nowrap;">
+                                <input type="checkbox" id="{{member}}" class="checkbox-inline" ng-model="selectedMembers[member]" />
+                                <label for="{{member}}">{{member}}</label>
+                            </span>
+                        </span>
+                    </div>
+                    <div>
+                        <button id="btnAssemble" class="btn btn-default" ng-click="assemble()">
+                            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                            Assemble!
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <hr />
+
+        <div class="row">
+            <div class="col-xs-8 col-xs-offset-2">
+                <div class="row">
+                    <div class="col-xs-4">
+                        Teams:
+                    </div>
+                </div>
+                <div class="row top-buffer" ng-repeat="team in teams">
+                    <div class="col-xs-8">
+                        <button class="btn btn-success text-left btn-block" ng-click="add(vote.key)">
+                            <span class="pull-left">
+                                {{team.name}}
+                            </span>
+                            <span class="badge pull-right">
+                                {{team.score}}
+                            </span>
+                        </button>
+                    </div>
+                    <div class="col-xs-4">
+                        <button class="btn btn-danger pull-right btn-block" ng-click="remove(vote.key)">
+                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
