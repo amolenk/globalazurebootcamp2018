@@ -20,37 +20,36 @@ namespace FrontEnd.Controllers
         private readonly FabricClient fabricClient;
         private readonly StatelessServiceContext serviceContext;
 
-        public TeamsController(HttpClient httpClient, StatelessServiceContext context, FabricClient fabricClient)
+        public TeamsController(HttpClient httpClient, StatelessServiceContext serviceContext, FabricClient fabricClient)
         {
             this.fabricClient = fabricClient;
             this.httpClient = httpClient;
-            this.serviceContext = context;
+            this.serviceContext = serviceContext;
         }
 
-        // GET: api/Votes
+        // GET: api/Teams
         [HttpGet("")]
         public async Task<IActionResult> Get()
         {
-            Uri serviceName = GetBackEndServiceName(this.serviceContext);
-            Uri proxyAddress = this.GetProxyAddress(serviceName);
+            Uri serviceName = GetBackEndServiceName(serviceContext);
 
-            ServicePartitionList partitions = await this.fabricClient.QueryManager.GetPartitionListAsync(serviceName);
+            ServicePartitionList partitions = await fabricClient.QueryManager.GetPartitionListAsync(serviceName);
 
-            List<Team> result = new List<Team>();
+            List<TeamDto> result = new List<TeamDto>();
 
             foreach (Partition partition in partitions)
             {
-                string proxyUrl =
-                    $"{proxyAddress}/api/Teams?PartitionKey={((Int64RangePartitionInformation)partition.PartitionInformation).LowKey}&PartitionKind=Int64Range";
+                long partitionKey = ((Int64RangePartitionInformation)partition.PartitionInformation).LowKey;
+                string proxyUrl = GetProxyUrl(serviceContext, partitionKey);
 
-                using (HttpResponseMessage response = await this.httpClient.GetAsync(proxyUrl))
+                using (HttpResponseMessage response = await httpClient.GetAsync(proxyUrl))
                 {
                     if (response.StatusCode != System.Net.HttpStatusCode.OK)
                     {
                         continue;
                     }
 
-                    result.AddRange(JsonConvert.DeserializeObject<List<Team>>(await response.Content.ReadAsStringAsync()));
+                    result.AddRange(JsonConvert.DeserializeObject<List<TeamDto>>(await response.Content.ReadAsStringAsync()));
                 }
             }
 
@@ -61,10 +60,7 @@ namespace FrontEnd.Controllers
         [HttpPut("{name}")]
         public async Task<IActionResult> Put(string name, [FromBody]string[] members)
         {
-            Uri serviceName = GetBackEndServiceName(this.serviceContext);
-            Uri proxyAddress = GetProxyAddress(serviceName);
-            long partitionKey = GetPartitionKey(name);
-            string proxyUrl = $"{proxyAddress}/api/Teams/{name}?PartitionKey={partitionKey}&PartitionKind=Int64Range";
+            string proxyUrl = GetProxyUrl(serviceContext, name);
 
             StringContent putContent = new StringContent(
                 JsonConvert.SerializeObject(new
@@ -87,16 +83,13 @@ namespace FrontEnd.Controllers
             }
         }
 
-        // DELETE: api/Votes/name
+        // DELETE: api/Teams/name
         [HttpDelete("{name}")]
         public async Task<IActionResult> Delete(string name)
         {
-            Uri serviceName = GetBackEndServiceName(this.serviceContext);
-            Uri proxyAddress = this.GetProxyAddress(serviceName);
-            long partitionKey = this.GetPartitionKey(name);
-            string proxyUrl = $"{proxyAddress}/api/VoteData/{name}?PartitionKey={partitionKey}&PartitionKind=Int64Range";
+            string proxyUrl = GetProxyUrl(serviceContext, name);
 
-            using (HttpResponseMessage response = await this.httpClient.DeleteAsync(proxyUrl))
+            using (HttpResponseMessage response = await httpClient.DeleteAsync(proxyUrl))
             {
                 if (response.StatusCode != System.Net.HttpStatusCode.OK)
                 {
@@ -112,31 +105,24 @@ namespace FrontEnd.Controllers
             return new Uri($"{context.CodePackageActivationContext.ApplicationName}/BackEnd");
         }
 
-
-        /// <summary>
-        /// Constructs a reverse proxy URL for a given service.
-        /// Example: http://localhost:19081/VotingApplication/VotingData/
-        /// </summary>
-        /// <param name="serviceName"></param>
-        /// <returns></returns>
-        private Uri GetProxyAddress(Uri serviceName)
+        private static string GetProxyUrl(ServiceContext context, string teamName)
         {
-            return new Uri($"http://localhost:19081{serviceName.AbsolutePath}");
+            // Create a partition key from the given name.
+            // Use the zero-based numeric position in the alphabet of the first letter of the name (0-25).
+            long partitionKey = Char.ToUpper(teamName.First()) - 'A';
+
+            return GetProxyUrl(context, partitionKey);
         }
 
-        /// <summary>
-        /// Creates a partition key from the given name.
-        /// Uses the zero-based numeric position in the alphabet of the first letter of the name (0-25).
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        private long GetPartitionKey(string name)
+        private static string GetProxyUrl(ServiceContext context, long partitionKey)
         {
-            return Char.ToUpper(name.First()) - 'A';
+            Uri serviceName = GetBackEndServiceName(context);
+
+            return $"http://localhost:19081{serviceName.AbsolutePath}/api/Teams?PartitionKey={partitionKey}&PartitionKind=Int64Range";
         }
     }
 
-    public class Team
+    public class TeamDto
     {
         public string Name { get; set; }
 
