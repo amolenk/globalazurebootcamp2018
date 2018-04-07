@@ -1,5 +1,6 @@
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using ShieldHrm;
 
 namespace FrontEnd.Controllers
 {
@@ -13,22 +14,18 @@ namespace FrontEnd.Controllers
 
         // GET: api/Members
         [HttpGet("")]
-        public IActionResult Get()
+        public async Task<IActionResult> Get()
         {
-            List<string> result = new List<string>
-            {
-                "Thor",
-                "Hulk",
-                "Captain America",
-                "Black Widow",
-                "Ironman",
-                "Spiderman",
-                "Vision",
-                "Dr. Strange",
-                "Black Panther"
-            };
+            EmployeeServiceClient client = new EmployeeServiceClient();
 
-            return Json(result);
+            try
+            {
+                return Json(await client.GetEmployeeListAsync());
+            }
+            finally
+            {
+                await client.CloseAsync();
+            }
         }
     }
 }

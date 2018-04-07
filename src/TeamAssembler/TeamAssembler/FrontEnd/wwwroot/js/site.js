@@ -49,9 +49,9 @@ app.controller('TeamAssemblerController', ['$rootScope', '$scope', '$http', '$ti
             });
     };
 
-    $scope.remove = function (item) {
-        $http.delete('api/Votes/' + item)
-            .then(function (data, status) {
+    $scope.remove = function (name) {
+        $http.delete('api/Teams/' + name)
+            .then(function (response, status) {
                 $scope.refresh();
             })
     };

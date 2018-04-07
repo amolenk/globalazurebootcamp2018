@@ -93,11 +93,11 @@ namespace FrontEnd.Controllers
             {
                 if (response.StatusCode != System.Net.HttpStatusCode.OK)
                 {
-                    return this.StatusCode((int)response.StatusCode);
+                    return StatusCode((int)response.StatusCode);
                 }
             }
 
-            return new OkResult();
+            return Ok();
         }
 
         private static Uri GetBackEndServiceName(ServiceContext context)
@@ -111,7 +111,9 @@ namespace FrontEnd.Controllers
             // Use the zero-based numeric position in the alphabet of the first letter of the name (0-25).
             long partitionKey = Char.ToUpper(teamName.First()) - 'A';
 
-            return GetProxyUrl(context, partitionKey);
+            Uri serviceName = GetBackEndServiceName(context);
+
+            return $"http://localhost:19081{serviceName.AbsolutePath}/api/Teams/{teamName}?PartitionKey={partitionKey}&PartitionKind=Int64Range";
         }
 
         private static string GetProxyUrl(ServiceContext context, long partitionKey)
