@@ -23,8 +23,8 @@ namespace BackEnd.Controllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            var teamsDictionary = await stateManager.GetOrAddAsync<IReliableDictionary<string, TeamState>>(DICTIONARY_TEAMS);
-            var teams = new List<TeamDto>();
+            var teamsDictionary = await stateManager.GetOrAddAsync<IReliableDictionary<string, Team>>(DICTIONARY_TEAMS);
+            var teams = new List<Team>();
 
             using (var tx = stateManager.CreateTransaction())
             {
@@ -33,12 +33,7 @@ namespace BackEnd.Controllers
 
                 while (await enumerator.MoveNextAsync(CancellationToken.None))
                 {
-                    teams.Add(new TeamDto
-                    {
-                        Name = enumerator.Current.Key,
-                        Members = enumerator.Current.Value.Members,
-                        Score = enumerator.Current.Value.Score
-                    });
+                    teams.Add(enumerator.Current.Value);
                 }
             }
 
@@ -48,12 +43,11 @@ namespace BackEnd.Controllers
         [HttpGet("{name}")]
         public async Task<IActionResult> Get(string name)
         {
-            var teamsDictionary = await stateManager.GetOrAddAsync<IReliableDictionary<string, TeamState>>(DICTIONARY_TEAMS);
+            var teamsDictionary = await stateManager.GetOrAddAsync<IReliableDictionary<string, Team>>(DICTIONARY_TEAMS);
 
             using (var tx = stateManager.CreateTransaction())
             {
                 var team = await teamsDictionary.TryGetValueAsync(tx, name);
-
                 if (team.HasValue)
                 {
                     return Ok(team);
@@ -64,18 +58,13 @@ namespace BackEnd.Controllers
         }
 
         [HttpPut("{name}")]
-        public async Task Put(string name, [FromBody]TeamDto team)
+        public async Task Put(string name, [FromBody]Team team)
         {
-            var teamsDictionary = await stateManager.GetOrAddAsync<IReliableDictionary<string, TeamState>>(DICTIONARY_TEAMS);
+            var teamsDictionary = await stateManager.GetOrAddAsync<IReliableDictionary<string, Team>>(DICTIONARY_TEAMS);
 
             using (var tx = stateManager.CreateTransaction())
             {
-                await teamsDictionary.SetAsync(tx, name, new TeamState
-                {
-                    Members = team.Members,
-                    Score = team.Score
-                });
-
+                await teamsDictionary.SetAsync(tx, name, team);
                 await tx.CommitAsync();
             }
         }
@@ -83,7 +72,7 @@ namespace BackEnd.Controllers
         [HttpDelete("{name}")]
         public async Task Delete(string name)
         {
-            var teamsDictionary = await stateManager.GetOrAddAsync<IReliableDictionary<string, TeamState>>(DICTIONARY_TEAMS);
+            var teamsDictionary = await stateManager.GetOrAddAsync<IReliableDictionary<string, Team>>(DICTIONARY_TEAMS);
 
             using (var tx = stateManager.CreateTransaction())
             {
@@ -93,22 +82,41 @@ namespace BackEnd.Controllers
         }
     }
 
-    public class TeamDto
+    [DataContract]
+    public class Team
     {
+        [DataMember]
         public string Name { get; set; }
 
+        [DataMember]
         public string[] Members { get; set; }
 
+        [DataMember]
         public int Score { get; set; }
+
+        [DataMember]
+        public PowerGrid PowerGrid { get; set; }
     }
 
     [DataContract]
-    public class TeamState
+    public class PowerGrid
     {
         [DataMember]
-        public string[] Members { get; set; }
+        public int Intelligence { get; set; }
 
         [DataMember]
-        public int Score { get; set; }
+        public int Strength { get; set; }
+
+        [DataMember]
+        public int Speed { get; set; }
+
+        [DataMember]
+        public int Durability { get; set; }
+
+        [DataMember]
+        public int EnergyProjection { get; set; }
+
+        [DataMember]
+        public int FightingSkills { get; set; }
     }
 }

@@ -43,24 +43,50 @@
                         Teams:
                     </div>
                 </div>
-                <div class="row top-buffer" ng-repeat="team in teams">
-                    <div class="col-xs-8">
-                        <button class="btn btn-success text-left btn-block">
-                            <span class="pull-left">
-                                {{team.name}}
-                            </span>
-                            <span class="badge pull-right">
-                                {{team.score}}
-                            </span>
+
+                <div class="panel panel-default" ng-repeat="team in teams">
+                    <div class="panel-heading">
+                        {{team.name}} Power Rating
+                        <button type="button" class="close" ng-click="remove(team.name)">
+                            <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <div class="col-xs-4">
-                        <button class="btn btn-danger pull-right btn-block" ng-click="remove(team.name)">
-                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                            Remove
-                        </button>
-                    </div>
+                    <table class="table">
+                        <tr>
+                            <td>Members:</td>
+                            <td>{{team.members}}</td>
+                        </tr>
+                        <tr>
+                            <td>Score:</td>
+                            <td>{{team.score}}</td>
+                        </tr>
+                        <tr>
+                            <td>Intelligence:</td>
+                            <td>{{team.powerGrid.intelligence}}: {{renderIntelligence(team.powerGrid.intelligence)}}</td>
+                        </tr>
+                        <tr>
+                            <td>Strength:</td>
+                            <td>{{team.powerGrid.strength}}: {{renderStrength(team.powerGrid.strength)}}</td>
+                        </tr>
+                        <tr>
+                            <td>Speed:</td>
+                            <td>{{team.powerGrid.speed}}: {{renderSpeed(team.powerGrid.speed)}}</td>
+                        </tr>
+                        <tr>
+                            <td>Durability:</td>
+                            <td>{{team.powerGrid.durability}}: {{renderDurability(team.powerGrid.durability)}}</td>
+                        </tr>
+                        <tr>
+                            <td>Energy Projection:</td>
+                            <td>{{team.powerGrid.energyProjection}}: {{renderEnergyProjection(team.powerGrid.energyProjection)}}</td>
+                        </tr>
+                        <tr>
+                            <td>Fighting Skills:</td>
+                            <td>{{team.powerGrid.fightingSkills}}: {{renderFightingSkills(team.powerGrid.fightingSkills)}}</td>
+                        </tr>
+                    </table>
                 </div>
+
             </div>
         </div>
     </div>

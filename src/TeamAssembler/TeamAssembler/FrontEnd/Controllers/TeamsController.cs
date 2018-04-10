@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using ShieldHrm;
 
 namespace FrontEnd.Controllers
 {
@@ -35,7 +36,7 @@ namespace FrontEnd.Controllers
 
             ServicePartitionList partitions = await fabricClient.QueryManager.GetPartitionListAsync(serviceName);
 
-            List<TeamDto> result = new List<TeamDto>();
+            List<Team> result = new List<Team>();
 
             foreach (Partition partition in partitions)
             {
@@ -49,7 +50,7 @@ namespace FrontEnd.Controllers
                         continue;
                     }
 
-                    result.AddRange(JsonConvert.DeserializeObject<List<TeamDto>>(await response.Content.ReadAsStringAsync()));
+                    result.AddRange(JsonConvert.DeserializeObject<List<Team>>(await response.Content.ReadAsStringAsync()));
                 }
             }
 
@@ -62,11 +63,15 @@ namespace FrontEnd.Controllers
         {
             string proxyUrl = GetProxyUrl(serviceContext, name);
 
+            PowerGrid powerGrid = await CalculatePowerGridAsync(members);
+
             StringContent putContent = new StringContent(
-                JsonConvert.SerializeObject(new
+                JsonConvert.SerializeObject(new Team
                 {
-                    members,
-                    score = -1
+                    Name = name,
+                    Members = members,
+                    PowerGrid = powerGrid,
+                    Score = powerGrid.CalculateAverageScore()
                 }),
                 Encoding.UTF8,
                 "application/json");
@@ -100,6 +105,49 @@ namespace FrontEnd.Controllers
             return Ok();
         }
 
+        private static async Task<PowerGrid> CalculatePowerGridAsync(string[] members)
+        {
+            int intelligence = 0;
+            int strength = 0;
+            int speed = 0;
+            int durability = 0;
+            int energyProjection = 0;
+            int fightingSkills = 0;
+
+            EmployeeServiceClient client = new EmployeeServiceClient();
+
+            try
+            {
+                foreach (string member in members)
+                {
+                    Employee employeeDetails = await client.GetEmployeeDetailsAsync(member);
+
+                    intelligence += employeeDetails.Intelligence;
+                    strength += employeeDetails.Strength;
+                    speed += employeeDetails.Speed;
+                    durability += employeeDetails.Durability;
+                    energyProjection += employeeDetails.EnergyProjection;
+                    fightingSkills += employeeDetails.FightingSkills;
+                }
+            }
+            finally
+            {
+                await client.CloseAsync();
+            }
+
+            int teamSize = members.Length;
+
+            return new PowerGrid
+            {
+                Intelligence = intelligence / teamSize,
+                Strength = strength / teamSize,
+                Speed = speed / teamSize,
+                Durability = durability / teamSize,
+                EnergyProjection = energyProjection / teamSize,
+                FightingSkills = fightingSkills / teamSize
+            };
+        }
+
         private static Uri GetBackEndServiceName(ServiceContext context)
         {
             return new Uri($"{context.CodePackageActivationContext.ApplicationName}/BackEnd");
@@ -124,12 +172,34 @@ namespace FrontEnd.Controllers
         }
     }
 
-    public class TeamDto
+    public class Team
     {
         public string Name { get; set; }
 
         public string[] Members { get; set; }
 
         public int Score { get; set; }
+
+        public PowerGrid PowerGrid { get; set; }
+    }
+
+    public class PowerGrid
+    {
+        public int Intelligence { get; set; }
+
+        public int Strength { get; set; }
+
+        public int Speed { get; set; }
+
+        public int Durability { get; set; }
+
+        public int EnergyProjection { get; set; }
+
+        public int FightingSkills { get; set; }
+
+        public int CalculateAverageScore()
+        {
+            return (Intelligence + Strength + Speed + Durability + EnergyProjection + FightingSkills) / 6;
+        }
     }
 }
