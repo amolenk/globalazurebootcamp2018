@@ -6,6 +6,7 @@ app.controller('TeamAssemblerController', ['$rootScope', '$scope', '$http', '$ti
     $scope.selectedMembers = {};
 
     $scope.init = function () {
+        $scope.getMembers();
         $scope.refresh();
     }
 
