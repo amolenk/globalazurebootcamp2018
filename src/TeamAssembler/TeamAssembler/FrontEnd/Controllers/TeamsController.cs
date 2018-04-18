@@ -114,7 +114,9 @@ namespace FrontEnd.Controllers
             int energyProjection = 0;
             int fightingSkills = 0;
 
-            EmployeeServiceClient client = new EmployeeServiceClient();
+            EmployeeServiceClient client = new EmployeeServiceClient(
+                EmployeeServiceClient.EndpointConfiguration.BasicHttpBinding_IEmployeeService,
+                "http://shieldhrm.teamassembler:8080/EmployeeService.svc/EmployeeService");
 
             try
             {
